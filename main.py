@@ -234,8 +234,8 @@ with dpg.window(tag="main", label="window title"):
 
     with dpg.group(horizontal=True):
         with dpg.child_window(width=200, tag="sidebar"):
-            dpg.add_text("Rainy Musicart", color=(137, 142, 255))
-            dpg.add_text("Build by NotCookey")
+            dpg.add_text("Winamp", color=(137, 142, 255))
+            dpg.add_text("Build by Simi and Badea")
             dpg.add_spacer(height=2)
           #  dpg.add_button(label="Support", width=-1, height=23,
                          #  callback=lambda: webbrowser.open(url="https://github.com/NotCookey/Rainy"))
