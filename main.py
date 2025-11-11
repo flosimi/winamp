@@ -13,6 +13,14 @@ import atexit
 # Database path constant
 SONGS_DB_PATH = "data/songs.json"
 
+# UI State Constants
+STATE_NONE = "State: None"
+STATE_PLAYING = "State: Playing"
+STATE_PAUSED = "State: Paused"
+
+# Audio file extensions
+AUDIO_EXTENSIONS = (".mp3", ".wav", ".ogg")
+
 dpg.create_context()
 dpg.create_viewport(title="Simi Winamp", large_icon="download.jpg", small_icon="download.jpg")
 pygame.mixer.init()
@@ -52,7 +60,7 @@ def update_slider():
         dpg.configure_item(item="pos", default_value=pygame.mixer.music.get_pos() / 1000)
         time.sleep(0.7)
     state = None
-    dpg.configure_item("cstate", default_value=f"State: None")
+    dpg.configure_item("cstate", default_value=STATE_NONE)
     dpg.configure_item("csong", default_value="Now Playing : ")
     dpg.configure_item("play", label="Play")
     dpg.configure_item(item="pos", max_value=100)
@@ -66,11 +74,11 @@ def play(sender, app_data, user_data):
         audio = MP3(user_data)
         dpg.configure_item(item="pos", max_value=audio.info.length)
         pygame.mixer.music.play()
-        thread = threading.Thread(target=update_slider, daemon=False).start()
+        threading.Thread(target=update_slider, daemon=False).start()
         if pygame.mixer.music.get_busy():
             dpg.configure_item("play", label="Pause")
             state = "playing"
-            dpg.configure_item("cstate", default_value=f"State: Playing")
+            dpg.configure_item("cstate", default_value=STATE_PLAYING)
             dpg.configure_item("csong", default_value=f"Now Playing : {ntpath.basename(user_data)}")
 
 
@@ -80,12 +88,12 @@ def play_pause():
         state = "paused"
         pygame.mixer.music.pause()
         dpg.configure_item("play", label="Play")
-        dpg.configure_item("cstate", default_value=f"State: Paused")
+        dpg.configure_item("cstate", default_value=STATE_PAUSED)
     elif state == "paused":
         state = "playing"
         pygame.mixer.music.unpause()
         dpg.configure_item("play", label="Pause")
-        dpg.configure_item("cstate", default_value=f"State: Playing")
+        dpg.configure_item("cstate", default_value=STATE_PLAYING)
     else:
         song = json.load(open(SONGS_DB_PATH, "r"))["songs"]
         if song:
@@ -93,14 +101,14 @@ def play_pause():
             no = song
             pygame.mixer.music.load(song)
             pygame.mixer.music.play()
-            thread = threading.Thread(target=update_slider, daemon=False).start()
+            threading.Thread(target=update_slider, daemon=False).start()
             dpg.configure_item("play", label="Pause")
             if pygame.mixer.music.get_busy():
                 audio = MP3(song)
                 dpg.configure_item(item="pos", max_value=audio.info.length)
                 state = "playing"
                 dpg.configure_item("csong", default_value=f"Now Playing : {ntpath.basename(song)}")
-                dpg.configure_item("cstate", default_value=f"State: Playing")
+                dpg.configure_item("cstate", default_value=STATE_PLAYING)
 
 
 def pre():
@@ -111,7 +119,7 @@ def pre():
         if n == 0:
             n = len(songs)
         play(sender=any, app_data=any, user_data=songs[n - 1])
-    except:
+    except (ValueError, IndexError):
         pass
 
 
@@ -123,7 +131,7 @@ def next():
         if n == len(songs) - 1:
             n = -1
         play(sender=any, app_data=any, user_data=songs[n + 1])
-    except:
+    except (ValueError, IndexError):
         pass
 
 
@@ -137,14 +145,13 @@ def add_files():
     data = json.load(open(SONGS_DB_PATH, "r"))
     root = Tk()
     root.withdraw()
-    filename = filedialog.askopenfilename(filetypes=[("Music Files", ("*.mp3", "*.wav", "*.ogg"))])
+    filename = filedialog.askopenfilename(filetypes=[("Music Files", AUDIO_EXTENSIONS)])
     root.quit()
-    if filename.endswith(".mp3" or ".wav" or ".ogg"):
-        if filename not in data["songs"]:
-            update_database(filename)
-            dpg.add_button(label=f"{ntpath.basename(filename)}", callback=play, width=-1, height=25,
-                           user_data=filename.replace("\\", "/"), parent="list")
-            dpg.add_spacer(height=2, parent="list")
+    if filename.endswith(AUDIO_EXTENSIONS) and filename not in data["songs"]:
+        update_database(filename)
+        dpg.add_button(label=f"{ntpath.basename(filename)}", callback=play, width=-1, height=25,
+                       user_data=filename.replace("\\", "/"), parent="list")
+        dpg.add_spacer(height=2, parent="list")
 
 
 def add_folder():
@@ -154,12 +161,11 @@ def add_folder():
     folder = filedialog.askdirectory()
     root.quit()
     for filename in os.listdir(folder):
-        if filename.endswith(".mp3" or ".wav" or ".ogg"):
-            if filename not in data["songs"]:
-                update_database(os.path.join(folder, filename).replace("\\", "/"))
-                dpg.add_button(label=f"{ntpath.basename(filename)}", callback=play, width=-1, height=25,
-                               user_data=os.path.join(folder, filename).replace("\\", "/"), parent="list")
-                dpg.add_spacer(height=2, parent="list")
+        if filename.endswith(AUDIO_EXTENSIONS) and filename not in data["songs"]:
+            update_database(os.path.join(folder, filename).replace("\\", "/"))
+            dpg.add_button(label=f"{ntpath.basename(filename)}", callback=play, width=-1, height=25,
+                           user_data=os.path.join(folder, filename).replace("\\", "/"), parent="list")
+            dpg.add_spacer(height=2, parent="list")
 
 
 def search(sender, app_data, user_data):
@@ -231,7 +237,7 @@ with dpg.font_registry():
 
 with dpg.window(tag="main", label="window title"):
     with dpg.child_window(autosize_x=True, height=45, no_scrollbar=True):
-        dpg.add_text(f"Now Playing : ", tag="csong")
+        dpg.add_text("Now Playing : ", tag="csong")
     dpg.add_spacer(height=2)
 
     with dpg.group(horizontal=True):
