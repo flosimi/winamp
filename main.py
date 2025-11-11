@@ -10,8 +10,11 @@ import random
 import os
 import atexit
 
+# Database path constant
+SONGS_DB_PATH = "data/songs.json"
+
 dpg.create_context()
-dpg.create_viewport(title="Simi Winamp", large_icon="download.ico", small_icon="download.ico")
+dpg.create_viewport(title="Simi Winamp", large_icon="download.jpg", small_icon="download.jpg")
 pygame.mixer.init()
 global state
 state = None
@@ -28,7 +31,7 @@ def update_volume(sender, app_data):
 
 
 def load_database():
-    songs = json.load(open("data/songs.json", "r+"))["songs"]
+    songs = json.load(open(SONGS_DB_PATH, "r+"))["songs"]
     for filename in songs:
         dpg.add_button(label=f"{ntpath.basename(filename)}", callback=play, width=-1,
                        height=25, user_data=filename.replace("\\", "/"), parent="list")
@@ -37,10 +40,10 @@ def load_database():
 
 
 def update_database(filename: str):
-    data = json.load(open("data/songs.json", "r+"))
+    data = json.load(open(SONGS_DB_PATH, "r+"))
     if filename not in data["songs"]:
         data["songs"] += [filename]
-    json.dump(data, open("data/songs.json", "r+"), indent=4)
+    json.dump(data, open(SONGS_DB_PATH, "r+"), indent=4)
 
 
 def update_slider():
@@ -54,7 +57,6 @@ def update_slider():
     dpg.configure_item("play", label="Play")
     dpg.configure_item(item="pos", max_value=100)
     dpg.configure_item(item="pos", default_value=0)
-
 
 def play(sender, app_data, user_data):
     global state, no
@@ -85,7 +87,7 @@ def play_pause():
         dpg.configure_item("play", label="Pause")
         dpg.configure_item("cstate", default_value=f"State: Playing")
     else:
-        song = json.load(open("data/songs.json", "r"))["songs"]
+        song = json.load(open(SONGS_DB_PATH, "r"))["songs"]
         if song:
             song = random.choice(song)
             no = song
@@ -103,7 +105,7 @@ def play_pause():
 
 def pre():
     global state, no
-    songs = json.load(open('data/songs.json', 'r'))["songs"]
+    songs = json.load(open(SONGS_DB_PATH, 'r'))["songs"]
     try:
         n = songs.index(no)
         if n == 0:
@@ -116,7 +118,7 @@ def pre():
 def next():
     global state, no
     try:
-        songs = json.load(open('data/songs.json', 'r'))["songs"]
+        songs = json.load(open(SONGS_DB_PATH, 'r'))["songs"]
         n = songs.index(no)
         if n == len(songs) - 1:
             n = -1
@@ -132,7 +134,7 @@ def stop():
 
 
 def add_files():
-    data = json.load(open("data/songs.json", "r"))
+    data = json.load(open(SONGS_DB_PATH, "r"))
     root = Tk()
     root.withdraw()
     filename = filedialog.askopenfilename(filetypes=[("Music Files", ("*.mp3", "*.wav", "*.ogg"))])
@@ -146,7 +148,7 @@ def add_files():
 
 
 def add_folder():
-    data = json.load(open("data/songs.json", "r"))
+    data = json.load(open(SONGS_DB_PATH, "r"))
     root = Tk()
     root.withdraw()
     folder = filedialog.askdirectory()
@@ -161,7 +163,7 @@ def add_folder():
 
 
 def search(sender, app_data, user_data):
-    songs = json.load(open("data/songs.json", "r"))["songs"]
+    songs = json.load(open(SONGS_DB_PATH, "r"))["songs"]
     dpg.delete_item("list", children_only=True)
     for index, song in enumerate(songs):
         if app_data in song.lower():
@@ -171,9 +173,9 @@ def search(sender, app_data, user_data):
 
 
 def removeall():
-    songs = json.load(open("data/songs.json", "r"))
+    songs = json.load(open(SONGS_DB_PATH, "r"))
     songs["songs"].clear()
-    json.dump(songs, open("data/songs.json", "w"), indent=4)
+    json.dump(songs, open(SONGS_DB_PATH, "w"), indent=4)
     dpg.delete_item("list", children_only=True)
     load_database()
 
